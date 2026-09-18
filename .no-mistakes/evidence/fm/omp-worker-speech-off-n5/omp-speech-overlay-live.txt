@@ -1,0 +1,19 @@
+Live validation: omp 18.2.5, isolated captain agent dir (PI_CODING_AGENT_DIR=<tmp>/agent),
+placeholder API key (no model call made). A throwaway probe extension (-e probe.ts) reads the
+running session's resolved settings singleton (pi.pi.settings.get) at session_start -- the same
+object omp's own TTS gate reads (`if (e.message.role === "assistant" && settings.get("speech.enabled"))`).
+
+Captain config.yml (isolated):  speech: { enabled: true, mode: all }
+`omp config get speech.enabled` against it -> true
+
+Launch line used = bin/fm-spawn.sh omp template, in a pty (script -q /dev/null):
+  env -u CLAUDECODE -u PI_CODING_AGENT ... FM_OMP_HARNESS=omp OMP_SKIP_SETUP=1 omp --config <overlay> --auto-approve --cwd <worktree> [-e probe.ts]
+
+[rpc, control: no overlay]                 speech.enabled=true  composer.shape=band       retry.usageReservePolicy=confirm
+[rpc, with worker overlay]                 speech.enabled=false composer.shape=borderless retry.usageReservePolicy=auto
+[tui, BASE overlay 9bc051f]                speech.enabled=true   <-- reproduces the pre-change behavior: worker inherits captain TTS
+[tui, TARGET overlay c5f7ef3]              speech.enabled=false
+[tui, adversarial captain: enabled:true, mode:all, enhanced:true, voice:bm_george + TARGET overlay]
+                                           speech.enabled=false (mode/enhanced/voice inherited but inert behind the enabled gate)
+
+Captain config.yml sha1 before == after every launch (27ec1684...): never written.
